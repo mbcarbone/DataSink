@@ -1,0 +1,60 @@
+# pyproject.toml
+# This file configures your Python project.
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["core", "cli"]
+
+[project]
+name = "DataSink"
+version = "0.1.0"
+description = "A short description of the DataSink project."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Your Name", email = "your.email@example.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License", # Change if you use a different license
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    # Add any third-party libraries your project needs here
+    # "requests",
+    # "numpy",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "coverage",
+]
+
+# This creates a command-line script called 'datasink'
+# that runs the main function in your cli.py file.
+[project.scripts]
+datasink = "cli:main"
+
+# --- Tool Configurations ---
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.run]
+# This prevents coverage from measuring the tests themselves.
+omit = ["tests/*"]
+
+[tool.coverage.report]
+# This will fail the check if coverage drops below 80%.
+fail_under = 80
+show_missing = true
