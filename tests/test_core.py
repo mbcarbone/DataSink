@@ -5,6 +5,10 @@ import os
 import shutil
 from pathlib import Path
 import pytest # Make sure you have pytest installed (`pip install pytest`)
+import sys
+
+# Include the current directory
+sys.path.insert(0, '..')
 
 # Import the function we want to test
 from core import sync_data

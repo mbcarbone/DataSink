@@ -1,0 +1,4 @@
+2025-08-24 12:36:05 - ERROR - Error: Source path 'cat' does not exist.
+2025-08-26 10:15:18 - INFO - Successfully copied file 'test_source/sample.txt' to 'test_destination'.
+2025-08-26 10:15:18 - INFO - Successfully copied directory 'test_source' to 'test_destination/test_source'.
+2025-08-26 10:15:18 - INFO - Successfully moved directory 'test_source' to 'test_destination/test_source'.
