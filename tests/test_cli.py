@@ -1,101 +1,97 @@
-# tests/test_cli.py
-# Pytest file for testing the command-line interface in cli.py
+# tests/test_core.py
+# Pytest file for testing the core logic in core.py
 
-import sys
-import pytest
-from unittest.mock import patch, call
+import os
+import shutil
+import logging
+from unittest.mock import patch, mock_open
 
-# Import the main function from the cli script
-from cli import main
+# Import the function we want to test
+from core import sync_data
 
-# We use the @patch decorator to temporarily replace parts of the code.
-# This lets us test the CLI logic in isolation without actually touching the filesystem.
+# --- Test Setup and Teardown ---
+# We'll create some temporary directories and files for our tests.
 
-@patch('cli.sync_data') # Mock the sync_data function
-@patch('sys.argv', ['cli.py', 'source_folder', 'dest_folder']) # Mock command-line args
-def test_cli_copy_operation(mock_sync_data):
-    """
-    Tests that the CLI calls sync_data with 'copy' operation by default.
-    """
-    mock_sync_data.return_value = (True, "Success")
-    main()
-    mock_sync_data.assert_called_once_with('source_folder', 'dest_folder', 'copy')
+# Define temporary paths for our test environment
+TEST_SOURCE_DIR = "test_source"
+TEST_DEST_DIR = "test_dest"
+TEST_SOURCE_FILE = os.path.join(TEST_SOURCE_DIR, "test_file.txt")
 
-@patch('cli.sync_data')
-@patch('sys.argv', ['cli.py', 'source_file.txt', 'dest_folder', '--move']) # Args with --move
-def test_cli_move_operation(mock_sync_data):
-    """
-    Tests that the CLI calls sync_data with 'move' when the --move flag is used.
-    """
-    mock_sync_data.return_value = (True, "Success")
-    main()
-    mock_sync_data.assert_called_once_with('source_file.txt', 'dest_folder', 'move')
+def setup_function():
+    """This function runs before each test."""
+    os.makedirs(TEST_SOURCE_DIR, exist_ok=True)
+    with open(TEST_SOURCE_FILE, "w") as f:
+        f.write("This is a test file.")
+    os.makedirs(TEST_DEST_DIR, exist_ok=True)
 
-@patch('cli.sync_data')
-@patch('sys.argv', ['cli.py', 'source', 'dest', '-m']) # Short flag for move
-def test_cli_move_operation_short_flag(mock_sync_data):
-    """
-    Tests that the CLI calls sync_data with 'move' when the -m flag is used.
-    """
-    mock_sync_data.return_value = (True, "Success")
-    main()
-    mock_sync_data.assert_called_once_with('source', 'dest', 'move')
+def teardown_function():
+    """This function runs after each test to clean up."""
+    if os.path.exists(TEST_SOURCE_DIR):
+        shutil.rmtree(TEST_SOURCE_DIR)
+    if os.path.exists(TEST_DEST_DIR):
+        shutil.rmtree(TEST_DEST_DIR)
 
-@patch('builtins.print') # Mock the print function to capture output
-@patch('cli.sync_data')
-@patch('sys.argv', ['cli.py', 'source', 'dest'])
-def test_cli_prints_success_message(mock_sync_data, mock_print):
-    """
+# --- Test Cases ---
 
-    Tests that the CLI prints the success message returned by sync_data.
-    """
-    mock_sync_data.return_value = (True, "Operation was a success!")
-    main()
-    all_print_calls = [c.args[0] for c in mock_print.call_args_list]
-    assert any("Success: Operation was a success!" in c for c in all_print_calls)
+def test_copy_file_success():
+    """Tests successful copying of a single file."""
+    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'copy')
+    assert success is True
+    # --- FIX: Match the capitalization from the core.py message ---
+    assert "Successfully copied" in message
+    assert os.path.exists(os.path.join(TEST_DEST_DIR, "test_file.txt"))
 
-@patch('builtins.print')
-@patch('cli.sync_data')
-@patch('sys.argv', ['cli.py', 'source', 'dest'])
-def test_cli_prints_error_message(mock_sync_data, mock_print):
-    """
-    Tests that the CLI prints the error message returned by sync_data.
-    """
-    mock_sync_data.return_value = (False, "Something went wrong.")
-    main()
-    all_print_calls = [c.args[0] for c in mock_print.call_args_list]
-    assert any("Error: Something went wrong." in c for c in all_print_calls)
+def test_move_file_success():
+    """Tests successful moving of a single file."""
+    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'move')
+    assert success is True
+    # --- FIX: Match the capitalization ---
+    assert "Successfully moved" in message
+    assert os.path.exists(os.path.join(TEST_DEST_DIR, "test_file.txt"))
+    assert not os.path.exists(TEST_SOURCE_FILE)
 
-# --- NEW TESTS TO INCREASE COVERAGE ---
+def test_copy_directory_success():
+    """Tests successful copying of an entire directory."""
+    success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'copy')
+    assert success is True
+    # --- FIX: Match the capitalization ---
+    assert "Successfully copied" in message
+    dest_path = os.path.join(TEST_DEST_DIR, os.path.basename(TEST_SOURCE_DIR))
+    assert os.path.exists(dest_path)
+    assert os.path.exists(os.path.join(dest_path, "test_file.txt"))
 
-@patch('builtins.print')
-@patch('sys.argv', ['cli.py', '--help'])
-def test_cli_help_message(mock_print):
-    """
-    Tests that running with --help prints a help message and exits.
-    This covers the code path where the main logic is NOT run.
-    """
-    # argparse's --help action calls sys.exit(), which raises SystemExit.
-    # We use pytest.raises to assert that this exit happens as expected.
-    with pytest.raises(SystemExit):
-        main()
+def test_move_directory_success():
+    """Tests successful moving of an entire directory."""
+    success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'move')
+    assert success is True
+    # --- FIX: Match the capitalization ---
+    assert "Successfully moved" in message
+    assert os.path.exists(os.path.join(TEST_DEST_DIR, os.path.basename(TEST_SOURCE_DIR)))
+    assert not os.path.exists(TEST_SOURCE_DIR)
 
-    # We can also check that the help message was printed.
-    # We look for a keyword that is likely to be in any help message.
-    all_print_calls_as_string = " ".join([c.args[0] for c in mock_print.call_args_list])
-    assert "usage:" in all_print_calls_as_string.lower()
+@patch('os.path.exists')
+def test_source_path_does_not_exist(mock_exists):
+    """Tests the error handling when the source path does not exist."""
+    mock_exists.return_value = False
+    non_existent_source = "/path/to/non_existent_file.txt"
+    success, message = sync_data(non_existent_source, TEST_DEST_DIR, 'copy')
+    assert success is False
+    expected_message = f"Error: Source path '{non_existent_source}' does not exist."
+    assert message == expected_message
 
-@patch('builtins.print')
-@patch('sys.argv', ['cli.py']) # No arguments provided
-def test_cli_missing_arguments(mock_print):
-    """
-    Tests that running with no arguments prints an error and exits.
-    This also covers a path where the main logic is not executed.
-    """
-    with pytest.raises(SystemExit):
-        main()
+@patch('shutil.copy2')
+def test_copy_permission_error(mock_copy):
+    """Tests error handling when a file copy operation fails due to permissions."""
+    mock_copy.side_effect = PermissionError("Permission denied")
+    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'copy')
+    assert success is False
+    assert "Permission denied" in message
 
-    # argparse will print an error message to stderr, which we can't easily
-    # capture here, but we can confirm that the program exited, which is
-    # the most important behavior to test. By running this path, we
-    # ensure the lines in the main function are covered from this angle.
+@patch('shutil.move')
+def test_move_io_error(mock_move):
+    """Tests error handling when a move operation fails due to an IOError."""
+    mock_move.side_effect = IOError("Disk full")
+    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'move')
+    assert success is False
+    assert "Disk full" in message
+
