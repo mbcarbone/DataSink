@@ -1,0 +1,13 @@
+LICENSE
+README.md
+cli.py
+core.py
+pyproject.toml
+DataSink.egg-info/PKG-INFO
+DataSink.egg-info/SOURCES.txt
+DataSink.egg-info/dependency_links.txt
+DataSink.egg-info/entry_points.txt
+DataSink.egg-info/requires.txt
+DataSink.egg-info/top_level.txt
+tests/test_cli.py
+tests/test_core.py
