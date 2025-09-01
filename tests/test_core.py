@@ -9,6 +9,7 @@ import sys
 
 # Include the current directory
 sys.path.insert(0, '..')
+sys.path.insert(0, '.')
 
 # Import the function we want to test
 from core import sync_data

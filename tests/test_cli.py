@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 # Include the path above for import
 sys.path.insert(0, '..')
+sys.path.insert(0, '.')
 
 # Import the main function from the cli script
 from cli import main
