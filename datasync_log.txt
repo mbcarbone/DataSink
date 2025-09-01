@@ -2,3 +2,11 @@
 2025-08-26 10:15:18 - INFO - Successfully copied file 'test_source/sample.txt' to 'test_destination'.
 2025-08-26 10:15:18 - INFO - Successfully copied directory 'test_source' to 'test_destination/test_source'.
 2025-08-26 10:15:18 - INFO - Successfully moved directory 'test_source' to 'test_destination/test_source'.
+2025-08-31 22:44:37 - INFO - Successfully copied file 'test_source/sample.txt' to 'test_destination'.
+2025-08-31 22:44:37 - INFO - Successfully copied directory 'test_source' to 'test_destination/test_source'.
+2025-08-31 22:44:37 - INFO - Successfully moved directory 'test_source' to 'test_destination/test_source'.
+2025-08-31 22:52:54 - INFO - Created destination directory: '../test'
+2025-08-31 22:52:55 - INFO - Successfully copied directory '.' to '../test/_20250831_225254'.
+2025-08-31 23:20:40 - INFO - Successfully copied file 'test_source/sample.txt' to 'test_destination'.
+2025-08-31 23:20:40 - INFO - Successfully copied directory 'test_source' to 'test_destination/test_source'.
+2025-08-31 23:20:40 - INFO - Successfully moved directory 'test_source' to 'test_destination/test_source'.
