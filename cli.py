@@ -63,7 +63,7 @@ def main():
     
     print(f"Check 'datasync_log.txt' for detailed logs.")
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     # This ensures the main() function is called only when the script is executed directly.
     main()
 
