@@ -1,97 +1,80 @@
-# tests/test_core.py
-# Pytest file for testing the core logic in core.py
+# tests/test_cli.py
+# Pytest file for testing the command-line interface in cli.py
 
-import os
-import shutil
-import logging
-from unittest.mock import patch, mock_open
+import pytest
+import sys
+from unittest.mock import patch
 
-# Import the function we want to test
-from core import sync_data
+# We import the main function for the tests
+from cli import main
 
-# --- Test Setup and Teardown ---
-# We'll create some temporary directories and files for our tests.
+# --- CLI Behavior Tests ---
 
-# Define temporary paths for our test environment
-TEST_SOURCE_DIR = "test_source"
-TEST_DEST_DIR = "test_dest"
-TEST_SOURCE_FILE = os.path.join(TEST_SOURCE_DIR, "test_file.txt")
+# The key fix is to patch 'cli.sync_data' because that is where the 
+# function is being called FROM in our tests.
+@patch('cli.sync_data') 
+def test_cli_successful_copy(mock_sync_data, monkeypatch, capsys):
+    """Tests the CLI for a successful copy operation."""
+    # Arrange
+    mock_sync_data.return_value = (True, "Operation was a success!")
+    monkeypatch.setattr(sys, 'argv', ['cli.py', 'source_dir', 'dest_dir'])
+    
+    # Act
+    main()
+    
+    # Assert
+    mock_sync_data.assert_called_once_with('source_dir', 'dest_dir', 'copy')
+    captured = capsys.readouterr()
+    assert "Success: Operation was a success!" in captured.out
 
-def setup_function():
-    """This function runs before each test."""
-    os.makedirs(TEST_SOURCE_DIR, exist_ok=True)
-    with open(TEST_SOURCE_FILE, "w") as f:
-        f.write("This is a test file.")
-    os.makedirs(TEST_DEST_DIR, exist_ok=True)
+@patch('cli.sync_data')
+def test_cli_successful_move(mock_sync_data, monkeypatch, capsys):
+    """Tests the CLI for a successful move operation."""
+    # Arrange
+    mock_sync_data.return_value = (True, "Move was successful!")
+    monkeypatch.setattr(sys, 'argv', ['cli.py', '--move', 'source.txt', 'dest_dir'])
+    
+    # Act
+    main()
+    
+    # Assert
+    mock_sync_data.assert_called_once_with('source.txt', 'dest_dir', 'move')
+    captured = capsys.readouterr()
+    assert "Success: Move was successful!" in captured.out
 
-def teardown_function():
-    """This function runs after each test to clean up."""
-    if os.path.exists(TEST_SOURCE_DIR):
-        shutil.rmtree(TEST_SOURCE_DIR)
-    if os.path.exists(TEST_DEST_DIR):
-        shutil.rmtree(TEST_DEST_DIR)
+@patch('cli.sync_data')
+def test_cli_failed_operation(mock_sync_data, monkeypatch, capsys):
+    """Tests the CLI for a failed operation."""
+    # Arrange
+    mock_sync_data.return_value = (False, "Something went wrong.")
+    monkeypatch.setattr(sys, 'argv', ['cli.py', 'source', 'dest'])
+    
+    # Act
+    main()
+    
+    # Assert
+    mock_sync_data.assert_called_once_with('source', 'dest', 'copy')
+    captured = capsys.readouterr()
+    assert "Error: Something went wrong." in captured.out
 
-# --- Test Cases ---
+# --- Argument Parsing Tests ---
 
-def test_copy_file_success():
-    """Tests successful copying of a single file."""
-    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'copy')
-    assert success is True
-    # --- FIX: Match the capitalization from the core.py message ---
-    assert "Successfully copied" in message
-    assert os.path.exists(os.path.join(TEST_DEST_DIR, "test_file.txt"))
+def test_cli_help_message(monkeypatch, capsys):
+    """Tests that the --help flag works and prints usage information."""
+    monkeypatch.setattr(sys, 'argv', ['cli.py', '--help'])
+    with pytest.raises(SystemExit):
+        main()
+    
+    captured = capsys.readouterr()
+    assert "usage: cli.py" in captured.out
 
-def test_move_file_success():
-    """Tests successful moving of a single file."""
-    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'move')
-    assert success is True
-    # --- FIX: Match the capitalization ---
-    assert "Successfully moved" in message
-    assert os.path.exists(os.path.join(TEST_DEST_DIR, "test_file.txt"))
-    assert not os.path.exists(TEST_SOURCE_FILE)
-
-def test_copy_directory_success():
-    """Tests successful copying of an entire directory."""
-    success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'copy')
-    assert success is True
-    # --- FIX: Match the capitalization ---
-    assert "Successfully copied" in message
-    dest_path = os.path.join(TEST_DEST_DIR, os.path.basename(TEST_SOURCE_DIR))
-    assert os.path.exists(dest_path)
-    assert os.path.exists(os.path.join(dest_path, "test_file.txt"))
-
-def test_move_directory_success():
-    """Tests successful moving of an entire directory."""
-    success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'move')
-    assert success is True
-    # --- FIX: Match the capitalization ---
-    assert "Successfully moved" in message
-    assert os.path.exists(os.path.join(TEST_DEST_DIR, os.path.basename(TEST_SOURCE_DIR)))
-    assert not os.path.exists(TEST_SOURCE_DIR)
-
-@patch('os.path.exists')
-def test_source_path_does_not_exist(mock_exists):
-    """Tests the error handling when the source path does not exist."""
-    mock_exists.return_value = False
-    non_existent_source = "/path/to/non_existent_file.txt"
-    success, message = sync_data(non_existent_source, TEST_DEST_DIR, 'copy')
-    assert success is False
-    expected_message = f"Error: Source path '{non_existent_source}' does not exist."
-    assert message == expected_message
-
-@patch('shutil.copy2')
-def test_copy_permission_error(mock_copy):
-    """Tests error handling when a file copy operation fails due to permissions."""
-    mock_copy.side_effect = PermissionError("Permission denied")
-    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'copy')
-    assert success is False
-    assert "Permission denied" in message
-
-@patch('shutil.move')
-def test_move_io_error(mock_move):
-    """Tests error handling when a move operation fails due to an IOError."""
-    mock_move.side_effect = IOError("Disk full")
-    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'move')
-    assert success is False
-    assert "Disk full" in message
+def test_cli_missing_arguments(monkeypatch, capsys):
+    """Tests that missing arguments print an error and exit."""
+    monkeypatch.setattr(sys, 'argv', ['cli.py'])
+    with pytest.raises(SystemExit):
+        main()
+        
+    captured = capsys.readouterr()
+    # argparse prints errors to the standard error stream (stderr)
+    assert "usage: cli.py" in captured.err
 

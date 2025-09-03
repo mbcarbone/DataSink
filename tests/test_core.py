@@ -3,41 +3,41 @@
 
 import os
 import shutil
-import logging
-from unittest.mock import patch, mock_open
+import pytest
+from unittest.mock import patch
 
-# Import the function we want to test
+# We import the function to be tested
 from core import sync_data
 
-# --- Test Setup and Teardown ---
-# We'll create some temporary directories and files for our tests.
+# --- Test Fixtures and Setup ---
 
-# Define temporary paths for our test environment
+# Define constants for our test files and directories
 TEST_SOURCE_DIR = "test_source"
 TEST_DEST_DIR = "test_dest"
 TEST_SOURCE_FILE = os.path.join(TEST_SOURCE_DIR, "test_file.txt")
 
+# This function runs before each test to set up a clean environment
 def setup_function():
-    """This function runs before each test."""
+    """Create fresh test directories and a sample file for each test."""
     os.makedirs(TEST_SOURCE_DIR, exist_ok=True)
+    os.makedirs(TEST_DEST_DIR, exist_ok=True)
     with open(TEST_SOURCE_FILE, "w") as f:
         f.write("This is a test file.")
-    os.makedirs(TEST_DEST_DIR, exist_ok=True)
 
+# This function runs after each test to clean up
 def teardown_function():
-    """This function runs after each test to clean up."""
+    """Remove test directories and files after each test."""
     if os.path.exists(TEST_SOURCE_DIR):
         shutil.rmtree(TEST_SOURCE_DIR)
     if os.path.exists(TEST_DEST_DIR):
         shutil.rmtree(TEST_DEST_DIR)
 
-# --- Test Cases ---
+# --- "Happy Path" Tests (Successful Operations) ---
 
 def test_copy_file_success():
     """Tests successful copying of a single file."""
     success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'copy')
     assert success is True
-    # --- FIX: Match the capitalization from the core.py message ---
     assert "Successfully copied" in message
     assert os.path.exists(os.path.join(TEST_DEST_DIR, "test_file.txt"))
 
@@ -45,54 +45,82 @@ def test_move_file_success():
     """Tests successful moving of a single file."""
     success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'move')
     assert success is True
-    # --- FIX: Match the capitalization ---
     assert "Successfully moved" in message
     assert os.path.exists(os.path.join(TEST_DEST_DIR, "test_file.txt"))
-    assert not os.path.exists(TEST_SOURCE_FILE)
+    assert not os.path.exists(TEST_SOURCE_FILE) # Source should be gone
 
 def test_copy_directory_success():
     """Tests successful copying of an entire directory."""
     success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'copy')
     assert success is True
-    # --- FIX: Match the capitalization ---
     assert "Successfully copied" in message
-    dest_path = os.path.join(TEST_DEST_DIR, os.path.basename(TEST_SOURCE_DIR))
-    assert os.path.exists(dest_path)
-    assert os.path.exists(os.path.join(dest_path, "test_file.txt"))
+    assert os.path.exists(os.path.join(TEST_DEST_DIR, TEST_SOURCE_DIR, "test_file.txt"))
 
 def test_move_directory_success():
     """Tests successful moving of an entire directory."""
     success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'move')
     assert success is True
-    # --- FIX: Match the capitalization ---
     assert "Successfully moved" in message
-    assert os.path.exists(os.path.join(TEST_DEST_DIR, os.path.basename(TEST_SOURCE_DIR)))
+    assert os.path.exists(os.path.join(TEST_DEST_DIR, TEST_SOURCE_DIR))
     assert not os.path.exists(TEST_SOURCE_DIR)
 
-@patch('os.path.exists')
-def test_source_path_does_not_exist(mock_exists):
-    """Tests the error handling when the source path does not exist."""
-    mock_exists.return_value = False
-    non_existent_source = "/path/to/non_existent_file.txt"
-    success, message = sync_data(non_existent_source, TEST_DEST_DIR, 'copy')
-    assert success is False
-    expected_message = f"Error: Source path '{non_existent_source}' does not exist."
-    assert message == expected_message
+def test_copy_directory_overwrites_existing_content():
+    """This test confirms the CORRECT behavior for overwriting content."""
+    # 1. Perform an initial copy.
+    sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'copy')
+    # 2. Modify the source file.
+    with open(TEST_SOURCE_FILE, "w") as f:
+        f.write("New updated content.")
+    # 3. Run the copy operation again.
+    success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'copy')
+    # 4. Assert that the file was updated.
+    assert success is True
+    final_file_path = os.path.join(TEST_DEST_DIR, TEST_SOURCE_DIR, "test_file.txt")
+    with open(final_file_path, "r") as f:
+        content = f.read()
+    assert content == "New updated content."
 
-@patch('shutil.copy2')
-def test_copy_permission_error(mock_copy):
-    """Tests error handling when a file copy operation fails due to permissions."""
-    mock_copy.side_effect = PermissionError("Permission denied")
+# --- "Unhappy Path" Tests (Error Conditions) ---
+
+def test_source_path_does_not_exist():
+    """Tests that a non-existent source path returns an error."""
+    success, message = sync_data("non_existent_file.txt", TEST_DEST_DIR, 'copy')
+    assert success is False
+    assert "does not exist" in message
+
+@patch('core.Path.mkdir')
+def test_destination_creation_os_error(mock_mkdir):
+    """Tests that an OSError during destination creation is handled."""
+    mock_mkdir.side_effect = OSError("Permission denied")
+    shutil.rmtree(TEST_DEST_DIR) # Ensure destination doesn't exist
+    
     success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'copy')
     assert success is False
-    assert "Permission denied" in message
+    assert "Could not create destination directory" in message
 
-@patch('shutil.move')
-def test_move_io_error(mock_move):
-    """Tests error handling when a move operation fails due to an IOError."""
-    mock_move.side_effect = IOError("Disk full")
-    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'move')
+def test_invalid_operation_for_file_raises_error():
+    """Tests that providing an invalid operation for a file is handled."""
+    success, message = sync_data(TEST_SOURCE_FILE, TEST_DEST_DIR, 'delete')
     assert success is False
-    assert "Disk full" in message
+    # FIX: Assert the exact, more descriptive error message.
+    assert message == "Invalid operation 'delete' specified for file."
 
+def test_invalid_operation_for_directory_raises_error():
+    """Tests that providing an invalid operation for a directory is handled."""
+    success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'delete')
+    assert success is False
+    # FIX: Assert the exact, more descriptive error message.
+    assert message == "Invalid operation 'delete' specified for directory."
+
+@patch('core.Path.is_dir')
+@patch('core.Path.is_file')
+@patch('core.Path.mkdir') # Also mock mkdir to prevent side effects
+def test_source_is_not_file_or_dir(mock_mkdir, mock_is_file, mock_is_dir):
+    """Tests the final 'else' block for an invalid source type."""
+    mock_is_dir.return_value = False
+    mock_is_file.return_value = False
+    
+    success, message = sync_data(TEST_SOURCE_DIR, TEST_DEST_DIR, 'copy')
+    assert success is False
+    assert "is not a file or directory" in message
 

@@ -10,3 +10,6 @@
 2025-08-31 23:20:40 - INFO - Successfully copied file 'test_source/sample.txt' to 'test_destination'.
 2025-08-31 23:20:40 - INFO - Successfully copied directory 'test_source' to 'test_destination/test_source'.
 2025-08-31 23:20:40 - INFO - Successfully moved directory 'test_source' to 'test_destination/test_source'.
+2025-09-01 18:03:19 - INFO - Successfully copied file 'test_source/sample.txt' to 'test_destination'.
+2025-09-01 18:03:19 - INFO - Successfully copied directory 'test_source' to 'test_destination/test_source'.
+2025-09-01 18:03:19 - INFO - Successfully moved directory 'test_source' to 'test_destination/test_source'.
