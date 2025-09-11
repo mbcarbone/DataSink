@@ -1,2 +1,4 @@
-cli
-core
+datasink
+htmlcov
+tests
+venv

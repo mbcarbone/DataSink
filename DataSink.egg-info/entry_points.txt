@@ -1,2 +1,5 @@
 [console_scripts]
-datasink = cli:main
+datasink = datasink.cli:main
+
+[gui_scripts]
+datasink-gui = datasink.gui:launch_app

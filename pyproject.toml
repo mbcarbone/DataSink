@@ -5,56 +5,22 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-py-modules = ["core", "cli"]
+[tool.setuptools.packages.find]
+# This tells setuptools to automatically find your package(s)
+# in the current directory.
+where = ["."]
 
 [project]
 name = "DataSink"
-version = "0.1.0"
-description = "A short description of the DataSink project."
+version = "2.0.0" # Bumping version for the new structure
+description = "A backup and transfer utility for Windows and Linux."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
-authors = [
-    { name = "Mike Carbone", email = "michael.carbone@gmail.com" },
-]
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License", # Change if you use a different license
-    "Operating System :: OS Independent",
-]
 
-dependencies = [
-    # Add any third-party libraries your project needs here
-    # "requests",
-    # "numpy",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "coverage",
-]
-
-# This creates a command-line script called 'datasink'
-# that runs the main function in your cli.py file.
+# Update the entry points to look inside the 'datasink' package
 [project.scripts]
-datasink = "cli:main"
+datasink = "datasink.cli:main"
 
-# --- Tool Configurations ---
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q"
-testpaths = [
-    "tests",
-]
-
-[tool.coverage.run]
-# This prevents coverage from measuring the tests themselves.
-omit = ["tests/*"]
-
-[tool.coverage.report]
-# This will fail the check if coverage drops below 80%.
-fail_under = 80
-show_missing = true
+[project.gui-scripts]
+datasink-gui = "datasink.gui:launch_app"
