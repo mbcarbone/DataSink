@@ -1,0 +1,97 @@
+# tests/test_gui.py
+# Pytest file for testing the GUI logic in datasink/gui.py
+
+import pytest
+import tkinter as tk
+from unittest.mock import patch, MagicMock
+
+# We need to import the class we are testing
+from datasink.gui import DataSinkGUI
+
+# --- Test Fixture ---
+
+@pytest.fixture
+def app():
+    """
+    A pytest fixture that creates an instance of our GUI application
+    for each test. This ensures each test starts with a fresh state.
+    """
+    root = tk.Tk()
+    root.withdraw() 
+    gui_app = DataSinkGUI(root)
+    yield gui_app
+    root.destroy()
+
+# --- GUI Behavior Tests ---
+
+@patch('datasink.gui.threading.Thread')
+def test_start_operation_thread_starts_thread(mock_thread, app):
+    """
+    Tests that clicking the 'Run' button correctly starts a background thread.
+    """
+    # Arrange
+    app.source_var.set("/fake/source")
+    app.dest_var.set("/fake/destination")
+    
+    # Act
+    app._start_operation_thread()
+    
+    # Assert
+    mock_thread.assert_called_once()
+    # Check that the thread was started with the correct target and arguments
+    call_args = mock_thread.call_args.kwargs
+    assert call_args['target'] == app._run_sync_data
+    assert call_args['args'] == ("/fake/source", "/fake/destination", "copy")
+
+@patch('tkinter.messagebox.showinfo')
+def test_update_ui_after_success(mock_showinfo, app):
+    """
+    Tests that the UI is updated correctly after a successful operation.
+    """
+    # Act
+    app.update_ui_after_operation(True, "Copy complete!")
+    
+    # Assert
+    assert "SUCCESS: Copy complete!" in app.status_text.get("1.0", tk.END)
+    mock_showinfo.assert_called_once_with("Success", "Copy complete!")
+    assert str(app.run_button.cget('state')) == 'normal'
+
+@patch('tkinter.messagebox.showerror')
+def test_update_ui_after_failure(mock_showerror, app):
+    """
+    Tests that the UI is updated correctly after a failed operation.
+    """
+    # Act
+    app.update_ui_after_operation(False, "Permission denied.")
+    
+    # Assert
+    assert "ERROR: Permission denied." in app.status_text.get("1.0", tk.END)
+    mock_showerror.assert_called_once_with("Error", "Permission denied.")
+    assert str(app.run_button.cget('state')) == 'normal'
+    
+@patch('tkinter.messagebox.showerror')
+def test_run_operation_with_missing_paths(mock_showerror, app):
+    """
+    Tests that an error is shown if the user clicks 'Run' without selecting paths.
+    """
+    # Act
+    app._start_operation_thread()
+    
+    # Assert
+    mock_showerror.assert_called_once_with("Input Error", "Please select both a source and a destination.")
+
+@patch('tkinter.filedialog.askdirectory', return_value="/mock/path/folder")
+def test_browse_buttons(mock_askdirectory, app):
+    """
+    Tests that the browse buttons correctly update the path variables.
+    """
+    # Act
+    app.browse_source()
+    # Assert
+    assert app.source_var.get() == "/mock/path/folder"
+    
+    # Act
+    app.browse_destination()
+    # Assert
+    assert app.dest_var.get() == "/mock/path/folder"
+

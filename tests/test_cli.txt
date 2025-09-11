@@ -1,19 +1,18 @@
 # tests/test_cli.py
-# Pytest file for testing the command-line interface in datasink/cli.py
+# Pytest file for testing the command-line interface in cli.py
 
 import pytest
 import sys
 from unittest.mock import patch
 
-# --- UPDATED IMPORT ---
-# Import 'main' from the 'datasink' package
-from datasink.cli import main
+# We import the main function for the tests
+from cli import main
 
 # --- CLI Behavior Tests ---
 
-# The key fix is to patch 'datasink.cli.sync_data' because that is where the 
+# The key fix is to patch 'cli.sync_data' because that is where the 
 # function is being called FROM in our tests.
-@patch('datasink.cli.sync_data') 
+@patch('cli.sync_data') 
 def test_cli_successful_copy(mock_sync_data, monkeypatch, capsys):
     """Tests the CLI for a successful copy operation."""
     # Arrange
@@ -28,7 +27,7 @@ def test_cli_successful_copy(mock_sync_data, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "Success: Operation was a success!" in captured.out
 
-@patch('datasink.cli.sync_data')
+@patch('cli.sync_data')
 def test_cli_successful_move(mock_sync_data, monkeypatch, capsys):
     """Tests the CLI for a successful move operation."""
     # Arrange
@@ -43,7 +42,7 @@ def test_cli_successful_move(mock_sync_data, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "Success: Move was successful!" in captured.out
 
-@patch('datasink.cli.sync_data')
+@patch('cli.sync_data')
 def test_cli_failed_operation(mock_sync_data, monkeypatch, capsys):
     """Tests the CLI for a failed operation."""
     # Arrange
