@@ -58,13 +58,18 @@ def sync_data(source_path: str, destination_path: str, operation: str = 'copy'):
     destination = Path(destination_path)
     
     # --- SECURITY: Path Validation ---
-    if not source.exists():
-        message = f"Error: Source path '{source}' does not exist."
-        logging.error(message)
-        return False, message
+    try:
+        if not source.exists():
+            message = f"Error: Source path '{source}' does not exist."
+            logging.error(message)
+            return False, message
 
-    if not is_safe_path(destination):
-        message = f"Error: Destination path '{destination}' is outside of the allowed directories (your home directory or current working directory)."
+        if not is_safe_path(destination):
+            message = f"Error: Destination path '{destination}' is outside of the allowed directories (your home directory or current working directory)."
+            logging.error(message)
+            return False, message
+    except (OSError, ValueError) as e:
+        message = f"Error processing path: Invalid path provided. Reason {e}"
         logging.error(message)
         return False, message
         
@@ -74,8 +79,9 @@ def sync_data(source_path: str, destination_path: str, operation: str = 'copy'):
             message = "Error: Cannot copy or move a directory into itself or a subdirectory."
             logging.error(message)
             return False, message
-    except FileNotFoundError:
+    except (FileNotFoundError, ValueError):
         # This can happen if the destination doesn't exist yet, which is fine.
+        # or if a path is invalid (ValueError), which are both fine to ignore here.
         pass
 
     # Ensure the destination directory exists before file operations
@@ -83,7 +89,7 @@ def sync_data(source_path: str, destination_path: str, operation: str = 'copy'):
         try:
             destination.mkdir(parents=True, exist_ok=True)
             logging.info(f"Created destination directory: '{destination}'")
-        except OSError as e:
+        except (OSError, ValueError) as e:
             message = f"Error: Could not create destination directory '{destination}'. Reason: {e}"
             logging.error(message)
             return False, message
@@ -123,7 +129,7 @@ def sync_data(source_path: str, destination_path: str, operation: str = 'copy'):
         logging.info(message)
         return True, message
 
-    except (shutil.Error, OSError) as e:
+    except (shutil.Error, OSError, ValueError) as e:
         message = f"An error occurred during the '{operation}' operation: {e}"
         logging.error(message)
         return False, message

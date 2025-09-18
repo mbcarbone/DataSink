@@ -12,3 +12,4 @@ datasink/core.py
 datasink/gui.py
 tests/test_cli.py
 tests/test_core.py
+tests/test_gui.py
