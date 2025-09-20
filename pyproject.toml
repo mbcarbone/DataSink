@@ -16,7 +16,7 @@ version = "0.0.3" # Bumping version for the new structure
 description = "A backup and transfer utility for Windows and Linux."
 readme = "README.md"
 requires-python = ">=3.8"
-license = { file = "LICENSE" }
+license = { file = "LICENSE.md" }
 
 # Update the entry points to look inside the 'datasink' package
 [project.scripts]
