@@ -1,7 +1,3 @@
-Of course. Here is a comprehensive `README.md` file for your `DataSink` project.
-
------
-
 # DataSink
 
 DataSink is a simple, cross-platform utility for backing up and transferring files and directories. It offers both a straightforward command-line interface (CLI) and an intuitive graphical user interface (GUI), making it easy to copy or move data.
