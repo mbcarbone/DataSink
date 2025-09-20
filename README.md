@@ -95,7 +95,3 @@ For advanced users and developers, DataSink includes a fuzzing harness to test t
     ```bash
     python fuzz_core.py corpus
     ```
-
-## License
-
-This project is licensed under the MIT License.
