@@ -1,0 +1,1 @@
+2025-09-20 14:31:01 - ERROR - Error: Destination path '/mnt/z/Backups' is outside of the allowed directories (your home directory or current working directory).
