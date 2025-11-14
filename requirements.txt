@@ -1,4 +1,8 @@
-pytest
-coverage
-math
-datetime from datetime
+atheris==2.3.0
+coverage==7.10.4
+-e git+https://github.com/mbcarbone/DataSink.git@1448864acecbf1ae4a031141e5eebbc054781733#egg=DataSink
+iniconfig==2.1.0
+packaging==25.0
+pluggy==1.6.0
+Pygments==2.19.2
+pytest==8.4.1
