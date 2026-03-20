@@ -22,6 +22,8 @@ def is_safe_path(path: Path) -> bool:
     or a subdirectory of the current working directory.
     This helps prevent path traversal attacks.
     """
+    # this function needs to be revisted; the user experience needs
+    # to be changed to something more flexible.
     try:
         # Resolve the path to its absolute form, following any symlinks.
         abs_path = path.resolve(strict=True)
